@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FLOWERS.AE - The Art of Gifting</title>
-  <link rel="stylesheet" href="/site-pour-vente-de-fleur/static/css/style.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
@@ -22,15 +22,14 @@
 
   <div class="products">
     <div class="product">
-      <img src="/site-pour-vente-de-fleur/static/uploads/Roserouge.jpg">
-      <h2>Rose Rouge</h2>
+      <img src="{{ url_for('static', filename='uploads/Roserouge.jpg') }}">
       <p></p>
       <p class="price">à partir de 20$</p>
       <button>Passer commande</button>
     </div>
 
     <div class="product">
-      <img src="/site-pour-vente-de-fleur/static/uploads/Tulipebleu.jpg" >
+      <img src="{{ url_for('static', filename='uploads/Tulipebleu.jpg') }}">
       <h2>tulipe bleu</h2>
       <p></p>
       <p class="price">à partir de 35$</p>
