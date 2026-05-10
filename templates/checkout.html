@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caisse - FLOWERS.AE</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>Plantes Ornementales <br> Made in DRC</h1>
+    <nav>
+      <a href="{{ url_for('home') }}">Accueil</a> | 
+      <a href="{{ url_for('cart') }}">Panier (<span id="cart-count">0</span>)</a>
+    </nav>
+  </header>
+
+  <div class="checkout-container" style="padding: 20px;">
+    <h2>Finaliser la commande</h2>
+    <form id="checkout-form">
+      <fieldset>
+        <legend>Informations de livraison</legend>
+        <label for="name">Nom complet :</label><br><input type="text" id="name" required><br><br>
+        <label for="address">Adresse de livraison :</label><br><input type="text" id="address" required><br><br>
+        <label for="phone">Téléphone :</label><br><input type="tel" id="phone" required><br><br>
+      </fieldset>
+      
+      <fieldset>
+        <legend>Paiement</legend>
+        <p><em><!-- INSÈRE TON API DE PAIEMENT ICI (Stripe, Paypal, Maxicash...) --></em></p>
+      </fieldset>
+
+      <button type="submit">Payer <span id="pay-total">0</span>$</button>
+    </form>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

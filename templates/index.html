@@ -12,8 +12,8 @@
     <h1>Plantes Ornementales <br> Made in DRC</h1>
     <p>THE ART OF GIFTING <br>AND DECORATION</p>
     <nav>
-      
-    
+      <a href="/">Accueil</a>
+    </nav>
   </header>
 
   <div class="search-bar">
@@ -23,9 +23,10 @@
   <div class="products">
     <div class="product">
       <img src="{{ url_for('static', filename='uploads/Roserouge.jpg') }}">
+      <h2>Rose Rouge</h2>
       <p></p>
       <p class="price">à partir de 20$</p>
-      <button>Passer commande</button>
+      <a href="/paiement?produit=Rose+Rouge&prix=20"><button>Commander</button></a>
     </div>
 
     <div class="product">
@@ -33,10 +34,9 @@
       <h2>tulipe bleu</h2>
       <p></p>
       <p class="price">à partir de 35$</p>
-      <button>Passer commande</button>
+      <a href="/paiement?produit=Tulipe+bleu&prix=35"><button>Commander</button></a>
     </div>
   </div>
   
-
 </body>
 </html>

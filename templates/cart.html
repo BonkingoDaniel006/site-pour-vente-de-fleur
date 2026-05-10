@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panier - FLOWERS.AE</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>Plantes Ornementales <br> Made in DRC</h1>
+    <nav>
+      <a href="{{ url_for('home') }}">Accueil</a> | 
+      <a href="{{ url_for('cart') }}">Panier (<span id="cart-count">0</span>)</a>
+    </nav>
+  </header>
+
+  <div class="cart-container" style="padding: 20px;">
+    <h2>Votre Panier</h2>
+    <ul id="cart-items"></ul>
+    <p><strong>Total : <span id="cart-total">0</span>$</strong></p>
+    <a href="{{ url_for('checkout') }}"><button id="btn-checkout">Passer à la caisse</button></a>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
