@@ -21,22 +21,16 @@
   </div>
 
   <div class="products">
+    {% for product in products %}
     <div class="product">
-      <img src="{{ url_for('static', filename='uploads/Roserouge.jpg') }}">
-      <h2>Rose Rouge</h2>
+      <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}">
+      <h2>{{ product.name }}</h2>
       <p></p>
-      <p class="price">à partir de 20$</p>
-      <a href="/paiement?produit=Rose+Rouge&prix=20"><button>Commander</button></a>
+      <p class="price">{{ product.price_label }}</p>
+      <a href="{{ url_for('paiement', produit_id=product.id) }}"><button>Commander</button></a>
     </div>
-
-    <div class="product">
-      <img src="{{ url_for('static', filename='uploads/Tulipebleu.jpg') }}">
-      <h2>tulipe bleu</h2>
-      <p></p>
-      <p class="price">à partir de 35$</p>
-      <a href="/paiement?produit=Tulipe+bleu&prix=35"><button>Commander</button></a>
-    </div>
+    {% endfor %}
   </div>
-  
+
 </body>
 </html>

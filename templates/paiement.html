@@ -14,31 +14,107 @@
     </nav>
   </header>
 
-  <div class="checkout-container" style="padding: 20px; max-width: 600px; margin: 0 auto;">
+  <div class="checkout-container">
     <h2>Finaliser la commande</h2>
     <p><strong>Produit choisi :</strong> {{ produit }}</p>
-    <p><strong>Prix à payer :</strong> {{ prix }}$</p>
+    <p><strong>Prix :</strong> {{ prix_label }}</p>
+    {% if sandbox %}
+    <p class="sandbox-badge">Mode test Shwary (sandbox) — aucun débit réel</p>
+    {% endif %}
 
-    <form id="payment-form" action="#" method="POST">
+    <div id="status-container" class="status-msg" style="display: none;"></div>
+
+    <form id="payment-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="produit_id" value="{{ produit_id }}">
+      <div class="hp-field" aria-hidden="true">
+        <label for="website">Ne pas remplir</label>
+        <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+      </div>
+
       <fieldset>
         <legend>Informations de livraison</legend>
         <label for="name">Nom complet :</label><br>
-        <input type="text" id="name" required><br><br>
-        
+        <input type="text" id="name" name="name" maxlength="120" required><br><br>
+
         <label for="address">Adresse de livraison :</label><br>
-        <input type="text" id="address" required><br><br>
-        
-        <label for="phone">Téléphone :</label><br>
-        <input type="tel" id="phone" required><br><br>
-      </fieldset>
-      
-      <fieldset>
-        <legend>Paiement</legend>
-        <p><em><!-- INSÈRE TON API DE PAIEMENT ICI (Stripe, FlexPay, Maxicash...) --></em></p>
+        <input type="text" id="address" name="address" maxlength="255" required><br><br>
       </fieldset>
 
-      <button type="submit">Payer {{ prix }}$</button>
+      <fieldset>
+        <legend>Paiement mobile (Shwary)</legend>
+        <label for="phone">Téléphone (format +243…) :</label><br>
+        <input
+          type="tel"
+          id="phone"
+          name="phone"
+          placeholder="Ex: +243981006621"
+          pattern="\+243[0-9]{9}"
+          title="Format : +243 suivi de 9 chiffres"
+          required
+        ><br><br>
+        <p class="payment-hint">
+          Validez le paiement sur votre téléphone après avoir cliqué sur « Payer ».
+        </p>
+      </fieldset>
+
+      <button type="submit" id="submit-btn">Payer {{ amount_cdf }} CDF</button>
     </form>
   </div>
+
+  <script>
+    const paymentForm = document.getElementById('payment-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const statusContainer = document.getElementById('status-container');
+
+    paymentForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Traitement en cours...';
+      statusContainer.style.display = 'block';
+      statusContainer.className = 'status-msg status-info';
+      statusContainer.textContent =
+        'Requête envoyée. Attendez la confirmation USSD sur votre téléphone...';
+
+      const formData = new FormData(paymentForm);
+
+      try {
+        const response = await fetch('/pay', {
+          method: 'POST',
+          body: formData,
+          credentials: 'same-origin',
+        });
+        const result = await response.json();
+
+        if (response.status === 403) {
+          throw new Error(result.error || 'Session expirée. Rechargez la page.');
+        }
+        if (response.status === 429) {
+          throw new Error(result.error || 'Trop de tentatives.');
+        }
+        if (!response.ok && result.error) {
+          throw new Error(result.error);
+        }
+
+        if (result.status === 'pending' || result.status === 'success') {
+          statusContainer.className = 'status-msg status-success';
+          statusContainer.innerHTML =
+            '<strong>Paiement initié !</strong><br>' +
+            'Statut : en attente de validation sur votre téléphone.<br>' +
+            '<small>En mode test, le message peut prendre jusqu\'à 60 secondes.</small>';
+        } else if (result.error) {
+          throw new Error(result.error);
+        } else {
+          throw new Error('Réponse inattendue du serveur de paiement.');
+        }
+      } catch (error) {
+        statusContainer.className = 'status-msg status-error';
+        statusContainer.textContent = 'Erreur : ' + error.message;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Réessayer';
+      }
+    });
+  </script>
 </body>
 </html>

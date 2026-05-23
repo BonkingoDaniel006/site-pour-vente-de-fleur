@@ -113,3 +113,85 @@
       background-color: #f9f9f9;
       color: #333;
   }
+
+    .checkout-container {
+      padding: 20px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .checkout-container fieldset {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background: white;
+    }
+
+    .checkout-container input[type="text"],
+    .checkout-container input[type="tel"] {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+
+    .checkout-container #submit-btn {
+      width: 100%;
+      padding: 0.75rem;
+      border: none;
+      background-color: #d63384;
+      color: white;
+      border-radius: 20px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .checkout-container #submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .sandbox-badge {
+      background: #fff3cd;
+      color: #856404;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+
+    .payment-hint {
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    .status-msg {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .status-info {
+      background: #e7f1ff;
+      color: #084298;
+    }
+
+    .status-success {
+      background: #d1e7dd;
+      color: #0f5132;
+    }
+
+    .status-error {
+      background: #f8d7da;
+      color: #842029;
+    }
+
+    .hp-field {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
