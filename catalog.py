@@ -1,5 +1,6 @@
 from config import Config
 
+MIN_AMOUNT_CDF = 2900  # minimum Shwary RDC (doc SDK)
 
 PRODUCTS = {
     "rose_rouge": {
@@ -15,7 +16,7 @@ PRODUCTS = {
     "petite_marguerite": {
         "name": "Petite marguerite",
         "image": "uploads/Petitefleur.jpg",
-        "price_cdf": 250,
+        "price_cdf": 2900,
     },
 }
 
@@ -26,8 +27,12 @@ def get_product(product_id):
 
 def product_amount_cdf(product):
     if "price_cdf" in product:
-        return int(product["price_cdf"])
-    return int(product["price_usd"] * Config.USD_TO_CDF_RATE)
+        amount = int(product["price_cdf"])
+    else:
+        amount = int(product["price_usd"] * Config.USD_TO_CDF_RATE)
+    if amount < MIN_AMOUNT_CDF:
+        return MIN_AMOUNT_CDF
+    return amount
 
 
 def product_price_label(product):

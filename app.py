@@ -12,7 +12,15 @@ from services.orders import (
     init_db,
     update_order_status,
 )
-from services.payment_service import create_payment
+from services.payment_service import (
+    AuthenticationError,
+    InsufficientFundsError,
+    RateLimitingError,
+    ShwaryAPIError,
+    ValidationError,
+    close_shwary_client,
+    create_payment,
+)
 from services.security import (
     apply_security_headers,
     check_rate_limit,
@@ -147,13 +155,25 @@ def pay():
 
     try:
         result = create_payment(phone, amount_cdf, reference_id=order_id)
+    except ValidationError as e:
+        return jsonify({"error": str(e)}), 400
+    except AuthenticationError:
+        logger.error("Identifiants Shwary invalides")
+        return jsonify({"error": "Configuration paiement invalide."}), 503
+    except InsufficientFundsError:
+        return jsonify({"error": "Paiement temporairement indisponible."}), 503
+    except RateLimitingError:
+        return jsonify({"error": "Service occupé. Réessayez dans quelques instants."}), 429
     except ValueError:
         return jsonify({"error": "Configuration paiement incomplète."}), 503
+    except ShwaryAPIError:
+        logger.exception("Erreur API Shwary")
+        return jsonify({"error": "Paiement indisponible. Réessayez."}), 502
     except Exception:
         logger.exception("Erreur lors de l'appel Shwary")
         return jsonify({"error": "Paiement indisponible. Réessayez."}), 500
 
-    if result.get("error"):
+    if isinstance(result, dict) and result.get("error"):
         return jsonify({"error": result["error"]}), 400
 
     shwary_tx_id = result.get("id")
@@ -188,7 +208,7 @@ def _handle_payment_callback():
 
     status = data.get("status")
     order_id = order["id"]
-    if status in ("completed", "success"):
+    if status == "completed":
         update_order_status(order_id, "paid", expected_amount=data.get("amount"))
         logger.info("Commande %s payée", order_id[:8])
     elif status == "failed":
@@ -217,4 +237,7 @@ def payment_callback_secure(token):
 
 
 if __name__ == "__main__":
-    app.run(debug=Config.FLASK_DEBUG, host="127.0.0.1", port=5000)
+    try:
+        app.run(debug=Config.FLASK_DEBUG, host="127.0.0.1", port=5000)
+    finally:
+        close_shwary_client()

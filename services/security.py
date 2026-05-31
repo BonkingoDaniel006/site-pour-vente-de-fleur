@@ -104,36 +104,11 @@ def is_callback_ip_allowed(client_ip):
 
 def verify_shwary_callback(data):
     """
-    Vérifie le callback Shwary (pas de signature HMAC documentée).
-    Couches : marchand, sandbox, devise, commande, montant, anti-rejeu.
+    Vérifie le callback Shwary puis confirme via l'API (get_transaction).
+    Pas de HMAC documenté — la double vérification API compense en partie.
     """
-    if not isinstance(data, dict):
-        return None, "payload invalide"
-
-    merchant_id = data.get("userId")
-    if merchant_id != Config.SHWARY_MERCHANT_ID:
-        return None, "marchand non reconnu"
-
-    tx_id = data.get("id")
-    status = data.get("status")
-    amount = data.get("amount")
-    reference_id = data.get("referenceId")
-    currency = (data.get("currency") or "").upper()
-    is_sandbox = data.get("isSandbox")
-
-    if not tx_id or status is None or amount is None:
-        return None, "champs requis manquants"
-
-    if currency and currency != "CDF":
-        return None, "devise invalide"
-
-    if is_sandbox is not None and bool(is_sandbox) != Config.SHWARY_SANDBOX:
-        return None, "mode sandbox incohérent"
-
-    try:
-        amount = int(amount)
-    except (TypeError, ValueError):
-        return None, "montant invalide"
+    from pydantic import ValidationError as PydanticValidationError
+    from shwary import WebhookPayload
 
     from services.orders import (
         get_order_by_id,
@@ -141,6 +116,35 @@ def verify_shwary_callback(data):
         is_webhook_duplicate,
         record_webhook_event,
     )
+    from services.payment_service import (
+        ShwaryAPIError,
+        verify_transaction,
+    )
+
+    if not isinstance(data, dict):
+        return None, "payload invalide"
+
+    merchant_id = data.get("userId")
+    if merchant_id != Config.SHWARY_MERCHANT_ID:
+        return None, "marchand non reconnu"
+
+    try:
+        payload = WebhookPayload.model_validate(data)
+    except PydanticValidationError:
+        return None, "payload invalide"
+
+    tx_id = payload.id
+    status = payload.status
+    amount = int(payload.amount)
+    reference_id = data.get("referenceId")
+    currency = (data.get("currency") or "").upper()
+    is_sandbox = data.get("isSandbox")
+
+    if currency and currency != "CDF":
+        return None, "devise invalide"
+
+    if is_sandbox is not None and bool(is_sandbox) != Config.SHWARY_SANDBOX:
+        return None, "mode sandbox incohérent"
 
     order = None
     if reference_id:
@@ -156,6 +160,12 @@ def verify_shwary_callback(data):
     event_key = f"{tx_id}:{status}"
     if is_webhook_duplicate(event_key):
         return order, "duplicate"
+
+    try:
+        if not verify_transaction(tx_id, status, amount):
+            return None, "transaction non confirmée par Shwary"
+    except ShwaryAPIError:
+        return None, "impossible de confirmer la transaction"
 
     record_webhook_event(event_key, tx_id, status)
     return order, None

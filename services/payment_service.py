@@ -1,5 +1,15 @@
-import requests
+from shwary import (
+    AuthenticationError,
+    InsufficientFundsError,
+    RateLimitingError,
+    Shwary,
+    ShwaryAPIError,
+    ValidationError,
+)
+
 from config import Config
+
+_client = None
 
 
 def _ensure_credentials():
@@ -7,54 +17,63 @@ def _ensure_credentials():
         raise ValueError("Identifiants Shwary manquants")
 
 
+def get_shwary_client():
+    global _client
+    _ensure_credentials()
+    if _client is None:
+        _client = Shwary(
+            merchant_id=Config.SHWARY_MERCHANT_ID,
+            merchant_key=Config.SHWARY_MERCHANT_KEY,
+            is_sandbox=Config.SHWARY_SANDBOX,
+        )
+    return _client
+
+
+def close_shwary_client():
+    global _client
+    if _client is not None:
+        _client.close()
+        _client = None
+
+
 def create_payment(phone, amount, reference_id=None, is_sandbox=None):
     """
-    Crée une requête de paiement via l'API Shwary (sandbox ou production).
+    Initie un paiement via le SDK officiel shwary-python.
+    reference_id est conservé pour compatibilité (lien commande via shwary_tx_id).
     """
-    _ensure_credentials()
+    del reference_id, is_sandbox  # le SDK ne prend pas referenceId ; lien via tx id
 
-    if is_sandbox is None:
-        is_sandbox = Config.SHWARY_SANDBOX
+    client = get_shwary_client()
+    payment = client.initiate_payment(
+        country="DRC",
+        amount=float(amount),
+        phone_number=phone,
+        callback_url=Config.SHWARY_CALLBACK_URL,
+    )
+    return payment.model_dump()
 
-    if int(amount) <= 0:
-        raise ValueError("Montant invalide")
 
-    base_endpoint = f"{Config.SHWARY_BASE_URL.rstrip('/')}/api/v1/merchants/payment"
-    country_code = "DRC"
+def verify_transaction(tx_id, expected_status, expected_amount):
+    """
+    Confirme un webhook en interrogeant directement l'API Shwary.
+    """
+    client = get_shwary_client()
+    tx = client.get_transaction(tx_id)
+    if tx.status != expected_status:
+        return False
+    if int(tx.amount) != int(expected_amount):
+        return False
+    return True
 
-    if is_sandbox:
-        url = f"{base_endpoint}/sandbox/{country_code}"
-    else:
-        url = f"{base_endpoint}/{country_code}"
 
-    headers = {
-        "x-merchant-id": Config.SHWARY_MERCHANT_ID,
-        "x-merchant-key": Config.SHWARY_MERCHANT_KEY,
-        "Content-Type": "application/json",
-    }
-
-    payload = {
-        "amount": int(amount),
-        "clientPhoneNumber": phone,
-        "callbackUrl": Config.SHWARY_CALLBACK_URL,
-    }
-    if reference_id:
-        payload["referenceId"] = str(reference_id)
-
-    try:
-        response = requests.post(
-            url,
-            json=payload,
-            headers=headers,
-            timeout=10,
-        )
-
-        if response.status_code == 401:
-            return {
-                "error": "Authentification échouée. Vérifiez votre Merchant ID et Secret Key.",
-                "status": "failed",
-            }
-
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        return {"error": f"Erreur de connexion : {str(e)}", "status": "failed"}
+__all__ = [
+    "AuthenticationError",
+    "InsufficientFundsError",
+    "RateLimitingError",
+    "ShwaryAPIError",
+    "ValidationError",
+    "close_shwary_client",
+    "create_payment",
+    "get_shwary_client",
+    "verify_transaction",
+]
